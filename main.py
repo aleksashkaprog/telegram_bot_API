@@ -1,8 +1,20 @@
 #coding: utf-8
+import os
 import telebot
+import requests
+from decouple import config
 
+url = "https://hotels4.p.rapidapi.com/locations/search"
+querystring = {"query": "new york", "locale": "en_US"}
+headers = {
+    'x-rapidapi-host': "hotels4.p.rapidapi.com",
+    'x-rapidapi-key': "00bce2701emsh37560fcb97ec654p1ec40ejsn4f564a3f117b"
+    }
+response = requests.request("GET", url, headers=headers, params=querystring)
 
-bot = telebot.TeleBot('2073523840:AAGkBX1cxLalJg8GBKzkQW_gYd4ct2tZTBk')
+os.environ['token_tg'] = 'token'
+TOKEN = os.getenv('token_tg')
+bot = telebot.TeleBot(config(TOKEN))
 
 
 @bot.message_handler(content_types=['text'])
@@ -16,6 +28,9 @@ def get_text_messages(message):
 
     else:
         bot.send_message(message.from_user.id, 'Я не понимаю, используйте команду /help')
+
+
+
 
 
 bot.polling()
