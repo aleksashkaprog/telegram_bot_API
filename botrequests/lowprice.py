@@ -1,43 +1,63 @@
+
 from pprint import pprint
+
 
 import requests
 from decouple import config
 
+from botrequests.common_requests import get_photo
+
 API_KEY = config('rapidapi-key')
 
+headers = {
+    "X-RapidAPI-Key": API_KEY,
+    "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
+}
 
-def get_lowprice(city, hotels_count):
+
+def get_lowprice(city, hotels_count, checkin_date, checkout_date, count_photo):
     url = "https://hotels4.p.rapidapi.com/locations/v2/search"
-
+    url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
     querystring = {"query": f'{city}'}
 
-    headers = {
-        "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
-        "X-RapidAPI-Key": API_KEY
-    }
-
-    lowprice_list_id = []
-    lowprice_list_name = []
     hotels_list = []
+    hotels_dict = {}
     response = requests.request("GET", url, headers=headers, params=querystring)
     found_city = response.json()
     for i in range(len(found_city["suggestions"])):
         for j in range((len(found_city["suggestions"][i]["entities"]))):
-            if found_city["suggestions"][i]["entities"][j]["type"] == "HOTEL":
-                lowprice_list_id.append(found_city["suggestions"][i]["entities"][j]['destinationId'])
-                lowprice_list_name.append(found_city["suggestions"][i]["entities"][j]['name'])
+            if found_city["suggestions"][i]["entities"][j]["type"] == "CITY":
+                city_id = found_city["suggestions"][i]["entities"][j]['destinationId']
+                querystring_hotel = {"destinationId": city_id, "checkIn": checkin_date, "checkOut": checkout_date,
+                                 "pageNumber": "1", "pageSize": hotels_count, "sortOrder": "PRICE"}
 
-    for i in lowprice_list_id:
-        url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
+                response = requests.request("GET", url_hotel, headers=headers, params=querystring_hotel)
+                found_hotels = response.json()
+                for count in range(hotels_count):
+                    hotels_list.append(found_hotels['data']['body']['searchResults']['results'][count]['id'])
 
-        querystring_hotel = {"destinationId": f'{i}', "sortOrder": "PRICE"}
+    url_detail = "https://hotels4.p.rapidapi.com/properties/get-details"
+    for my_id in hotels_list:
+        querystring_detail = {"id": my_id, "checkIn": checkin_date, "checkOut": checkout_date}
 
-        response_hotel = requests.request("GET"[:hotels_count], url_hotel, headers=headers, params=querystring_hotel)
+        response_hotels = requests.request("GET", url_detail, headers=headers, params=querystring_detail)
+        hotels_info = response_hotels.json()
+        try:
+            hotels_dict[f'{my_id}name'] = hotels_info['data']['body']['propertyDescription']['name']
+            hotels_dict[f'{my_id}address'] = hotels_info['data']['body']['propertyDescription']['address'][
+                'addressLine1']
+            hotels_dict[f'{my_id}price'] = \
+                hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice']['formatted']
+            for ph in range(len(get_photo(count_photo, my_id))):
+                hotels_dict[f'{my_id}photo{ph+1}'] = get_photo(count_photo, my_id)[ph]
+        except KeyError:
+            pass
 
-        found_hotel = response_hotel.json()
-
-        hotels_list.append(found_hotel)
-    return hotels_list
+    return hotels_dict.values()
 
 
-pprint(get_lowprice('New York', 1))
+
+
+#
+# print(get_lowprice('Bern', 3, '2022-07-03', '2020-07-12', 0))
+# print(select_lowprice_db())
