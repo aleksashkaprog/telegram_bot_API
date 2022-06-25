@@ -4,39 +4,32 @@ conn = sqlite3.connect('/Users/macbook/PycharmProjects/python_basic_diploma/tele
 cursor = conn.cursor()
 
 
-def update_history_db(user_id: int, username: str, command: str, command_date):
+def update_history_db(user_id: int, username: str, command: str, command_date, hotels):
     cursor.execute(
         """
-    INSERT INTO `telebot_history` (user_id, username, command, command_date) VALUES 
-        (?, ?, ?, ?);
+    INSERT INTO `telebot_history` (user_id, username, hotels, command, command_date) VALUES 
+        (?, ?, ?, ?, ?);
     """,
-        (user_id, username, command, command_date),
-    )
-    conn.commit()
-
-
-def update_history_hotels_db(hotels: str):
-    cursor.execute(
-        """
-    INSERT INTO `telebot_history` (hotels) VALUES 
-        (?);
-    """,
-        (hotels),
+        (user_id, username, hotels, command, command_date),
     )
     conn.commit()
 
 
 def get_history_db(username):
     history_list = []
+    history_str = ''
     cursor.execute(
         """
-    SELECT command, command_date FROM 'telebot_history' WHERE username == (?)
+    SELECT command, command_date, hotels FROM 'telebot_history' WHERE username == (?)
     """,
         (username, )
     )
     result = cursor.fetchall()
     for res in result:
         for r in res:
-            history_list.append(r)
+            history_str += str(r) + ' '
+            history_list.append(history_str)
     return history_list
 
+#
+# print(get_history_db('aleksashkaprog'))
