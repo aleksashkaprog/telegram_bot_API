@@ -1,6 +1,4 @@
 /.env
-venv
 /.idea
-/venv/
-/venv/bin/
-/venv/lib/
+/.venv
+
