@@ -7,16 +7,15 @@ import requests
 from botrequests.common_requests import get_photo, headers, all_responses
 
 
-def get_bestdeal(city_id, low_price, high_price, min_distance, max_distance, hotels_count, checkin_date,
-                 checkout_date, count_photo, page_number=1):
+def get_bestdeal(**kwargs):
     url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
     hotels_list = []
     distance_dict = {}
     hotels_dict = {}
 
-    while len(hotels_list) < hotels_count:
-        querystring_hotel = {"destinationId": city_id, "checkIn": checkin_date, "checkOut": checkout_date,
-                             "priceMin": low_price, "priceMax": high_price, "pageNumber": str(page_number),
+    while len(hotels_list) < kwargs['hotels_count']:
+        querystring_hotel = {"destinationId": kwargs['city_id'], "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date'],
+                             "priceMin": kwargs['low_price'], "priceMax": kwargs['high_price'], "pageNumber": str(kwargs['page_number']),
                              "sortOrder": "DISTANCE_FROM_LANDMARK"}
 
         data = json.loads(all_responses(url_hotel, headers, querystring_hotel).text)
@@ -25,20 +24,20 @@ def get_bestdeal(city_id, low_price, high_price, min_distance, max_distance, hot
             return None, None
         for i_hotel in list_result:
             distance = re.findall(r'\d[,.]?\d', i_hotel['landmarks'][0]['distance'])[0].replace(',', '.')
-            if max_distance >= float(distance) >= min_distance:
-                for count in range(hotels_count):
+            if kwargs['max_distance'] >= float(distance) >= kwargs['min_distance']:
+                for count in range(kwargs['hotels_count']):
                     hotels_list.append(data['data']['body']['searchResults']['results'][count]['id'])
                     distance_dict[data['data']['body']['searchResults']['results'][count]['id']] = distance
-        page_number += 1
+        kwargs['page_number'] += 1
 
     url_detail = "https://hotels4.p.rapidapi.com/properties/get-details"
-    for my_id in hotels_list[:hotels_count]:
+    for my_id in hotels_list[:kwargs['hotels_count']]:
 
-        querystring_detail = {"id": my_id, "checkIn": checkin_date, "checkOut": checkout_date}
+        querystring_detail = {"id": my_id, "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date']}
         hotels_info = all_responses(url_detail, headers, querystring_detail).json()
         try:
-            if low_price <= float(hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice'][
-                                      'plain']) <= high_price:
+            if kwargs['low_price'] <= float(hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice'][
+                                      'plain']) <= kwargs['high_price']:
                 hotels_dict[my_id] = "Название отеля:" + ' ' + hotels_info['data']['body']['propertyDescription'][
                     'name'] + '\n' + \
                                      'Адрес:' + ' ' + hotels_info['data']['body']['propertyDescription']['address'][
@@ -46,9 +45,9 @@ def get_bestdeal(city_id, low_price, high_price, min_distance, max_distance, hot
                                          my_id] + '\n' + 'Цена:' + ' ' + \
                                      hotels_info['data']['body']['propertyDescription']['featuredPrice'][
                                          'currentPrice']['formatted']
-            if count_photo > 0:
-                for ph in range(len(get_photo(count_photo, my_id))):
-                    hotels_dict[my_id] += '\n' + get_photo(count_photo, my_id)[ph]
+            if kwargs['count_photo'] > 0:
+                for ph in range(len(get_photo(kwargs['count_photo'], my_id))):
+                    hotels_dict[my_id] += '\n' + get_photo(kwargs['count_photo'], my_id)[ph]
         except KeyError:
             hotels_dict[my_id] = hotels_info['data']['body']['propertyDescription']['name'] + '\n' + \
                                  hotels_info['data']['body']['propertyDescription']['address'][
