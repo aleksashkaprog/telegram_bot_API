@@ -11,7 +11,7 @@ from loader import bot
 from telegram_bot_calendar.base import LSTEP
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 
-from my_calendar import get_calendar
+from my_calendar import get_calendar, calendar_command, ALL_STEPS
 from states.best_info import BestInfoState
 
 
@@ -25,27 +25,10 @@ def bot_bestdeal(message: Message):
 def check_city(message):
     bot.set_state(message.from_user.id, BestInfoState.city_id, message.chat.id)
     bot.send_message(message.from_user.id, text='Выберите город', reply_markup=keyboard_city(message.text))
-    bot.register_next_step_handler(message, check_in_date)
+    bot.register_next_step_handler(message, calendar_command)
 
 
-ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
-
-
-@bot.message_handler(commands=['calendar'])
-def calendar_command(message: Message) -> None:
-    today = datetime.date.today()
-    calendar, step = get_calendar(calendar_id=1,
-                                  current_date=today,
-                                  min_date=today,
-                                  max_date=today + datetime.timedelta(days=365),
-                                  locale="ru")
-
-    bot.set_state(message.from_user.id, BestInfoState.checkin_date, message.chat.id)
-    bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
-    bot.register_next_step_handler(message, hotels_count)
-
-
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=5))
 def check_in_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
     result, key, step = get_calendar(calendar_id=1,
@@ -82,7 +65,7 @@ def check_in_date(call: CallbackQuery) -> None:
         bot.set_state(call.from_user.id, BestInfoState.checkout_date, call.message.chat.id)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=6))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
     result, key, step = get_calendar(calendar_id=2,

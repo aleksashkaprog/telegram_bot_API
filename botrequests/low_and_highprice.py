@@ -42,4 +42,4 @@ def find_hotels(**kwargs):
 
     return hotels_dict.values()
 
-# print(find_hotels(city_id=332483, hotels_count=3, checkin_date='2022-07-03', checkout_date='2022-07-12', sortOrder="PRICE", count_photo=3))
+# print(find_hotels(city_id=332483, hotels_count=3, checkin_date='2022-07-12', checkout_date='2022-07-15', sortOrder="PRICE", count_photo=3))

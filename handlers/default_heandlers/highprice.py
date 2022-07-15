@@ -4,9 +4,10 @@ from datetime import timedelta
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
 from telegram_bot_calendar import DetailedTelegramCalendar
 
+from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from botrequests.low_and_highprice import find_hotels
-from my_calendar import get_calendar
+from my_calendar import get_calendar, calendar_command, ALL_STEPS
 
 from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
 from loader import bot
@@ -25,24 +26,7 @@ def check_city(message):
     bot.register_next_step_handler(message, calendar_command)
 
 
-ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
-
-
-@bot.message_handler(commands=['calendar'])
-def calendar_command(message: Message) -> None:
-    today = datetime.date.today()
-    calendar, step = get_calendar(calendar_id=1,
-                                  current_date=today,
-                                  min_date=today,
-                                  max_date=today + datetime.timedelta(days=365),
-                                  locale="ru")
-
-    bot.set_state(message.from_user.id, HotelInfoState.checkin_date, message.chat.id)
-    bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
-    bot.register_next_step_handler(message, hotels_count)
-
-
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=3))
 def check_in_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
     result, key, step = get_calendar(calendar_id=1,
@@ -79,7 +63,7 @@ def check_in_date(call: CallbackQuery) -> None:
         bot.set_state(call.from_user.id, HotelInfoState.checkout_date, call.message.chat.id)
 
 
-@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))
+@bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=4))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
     result, key, step = get_calendar(calendar_id=2,
@@ -101,6 +85,7 @@ def check_out_date(call: CallbackQuery) -> None:
             bot.edit_message_text(f"Дата выезда {result}",
                                   call.message.chat.id,
                                   call.message.message_id)
+            bot.register_next_step_handler(call.message, hotels_count)
 
 
 def hotels_count(message):
@@ -124,7 +109,7 @@ def get_info(message):
         bot.send_message(message.from_user.id, 'Подождите немного, Ваш запрос обрабатывается',
                          reply_markup=ReplyKeyboardRemove())
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            for i in find_hotels(city_id=data['city_id'], hotels_count=int(data['hotels_count']),
+            for i in find_hotels(city_id=find_destinationid(data['city_id']), hotels_count=int(data['hotels_count']),
                                  checkin_date=data['checkin_date'], checkout_date=data['checkout_date'], sortOrder="PRICE_HIGHEST_FIRST",
                                  count_photo=0):
                 bot.send_message(message.from_user.id, i)
@@ -147,8 +132,8 @@ def get_info_with_photo(message):
     bot.send_message(message.from_user.id, 'Подождите немного, Ваш запрос обрабатывается',
                      reply_markup=ReplyKeyboardRemove())
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        for i in find_hotels(city_id=data['city_id'], hotels_count=int(data['hotels_count']),
-                             checkin_date=data['checkin_date'], checkout_date=data['checkout_date'], sortOrder="PRICE",
+        for i in find_hotels(city_id=find_destinationid(data['city_id']), hotels_count=int(data['hotels_count']),
+                             checkin_date=data['checkin_date'], checkout_date=data['checkout_date'], sortOrder="PRICE_HIGHEST_FIRST",
                              count_photo=int(data['count_photo'])):
             bot.send_message(message.from_user.id, i)
             history_string += i

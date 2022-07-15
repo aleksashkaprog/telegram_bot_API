@@ -60,4 +60,4 @@ def get_photo(photos_count, hotel_id):
     return photos_list
 
 # print(get_photo(5, 532733))
-# print(find_destinationid('Berlin'))
+# print(find_city('London'))
