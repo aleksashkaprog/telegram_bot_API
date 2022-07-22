@@ -21,7 +21,6 @@ def bot_bestdeal(message: Message):
     bot.register_next_step_handler(message, check_city)
 
 
-
 def check_city(message):
     bot.set_state(message.from_user.id, BestInfoState.city_id, message.chat.id)
     bot.send_message(message.from_user.id, text='Выберите город', reply_markup=keyboard_city(message.text))
@@ -130,7 +129,8 @@ def max(message):
 
 
 def is_photos(message):
-    bot.send_message(message.from_user.id, text='Хотите ли Вы посмотреть фотографии отелей?', reply_markup=keyboard_yesno())
+    bot.send_message(message.from_user.id, text='Хотите ли Вы посмотреть фотографии отелей?',
+                     reply_markup=keyboard_yesno())
     bot.register_next_step_handler(message, get_info)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['max_distance'] = message.text
@@ -155,7 +155,8 @@ def get_info(message):
 
     elif message.text.lower() == 'да':
         bot.set_state(message.from_user.id, BestInfoState.count_photo, message.chat.id)
-        bot.send_message(message.from_user.id, text='Сколько фотографий Вы хотите посмотреть?', reply_markup=keyboard_number())
+        bot.send_message(message.from_user.id, text='Сколько фотографий Вы хотите посмотреть?',
+                         reply_markup=keyboard_number())
         bot.register_next_step_handler(message, get_info_with_photo)
 
 
@@ -176,4 +177,3 @@ def get_info_with_photo(message):
     us_id = message.from_user.id
     us_name = message.from_user.username
     update_history_db(us_id, us_name, history_string, '/bestdeal', datetime.datetime.now())
-
