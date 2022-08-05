@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('/Users/macbook/PycharmProjects/python_basic_diploma/database/tele_bot.db', check_same_thread=False)
+conn = sqlite3.connect('database/tele_bot.db', check_same_thread=False)
 cursor = conn.cursor()
 
 
@@ -29,7 +29,7 @@ def get_history_db(username):
         for r in res:
             history_str += str(r) + ' '
             history_list.append(history_str)
-    return history_list
+    return history_list[:10]
 
 #
 # print(get_history_db('aleksashkaprog'))
