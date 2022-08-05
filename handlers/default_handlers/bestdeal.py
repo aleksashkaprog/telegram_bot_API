@@ -11,7 +11,7 @@ from loader import bot
 from telegram_bot_calendar.base import LSTEP
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 
-from my_calendar import get_calendar, calendar_command, ALL_STEPS
+from my_calendar import get_calendar, ALL_STEPS
 from states.best_info import BestInfoState
 
 
@@ -27,10 +27,25 @@ def check_city(message):
     bot.register_next_step_handler(message, calendar_command)
 
 
+@bot.message_handler(commands=['calendar'])
+def calendar_command(message: Message):
+    today = datetime.date.today()
+    calendar, step = get_calendar(calendar_id=5,
+                                  current_date=today,
+                                  min_date=today,
+                                  max_date=today + datetime.timedelta(days=365),
+                                  locale="ru")
+
+    bot.set_state(message.from_user.id, BestInfoState.checkin_date, message.chat.id)
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['city_id'] = message.text
+    bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
+
+
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=5))
 def check_in_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=1,
+    result, key, step = get_calendar(calendar_id=5,
                                      current_date=today,
                                      min_date=today,
                                      max_date=today + datetime.timedelta(days=365),
@@ -51,7 +66,7 @@ def check_in_date(call: CallbackQuery) -> None:
                                   call.message.message_id)
 
             bot.send_message(call.from_user.id, "Выберите дату выезда")
-            calendar, step = get_calendar(calendar_id=2,
+            calendar, step = get_calendar(calendar_id=6,
                                           min_date=result + datetime.timedelta(days=1),
                                           max_date=result + datetime.timedelta(days=365),
                                           locale="ru",
@@ -67,7 +82,7 @@ def check_in_date(call: CallbackQuery) -> None:
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=6))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=2,
+    result, key, step = get_calendar(calendar_id=6,
                                      current_date=today,
                                      min_date=today,
                                      max_date=today + datetime.timedelta(days=365),
@@ -83,9 +98,10 @@ def check_out_date(call: CallbackQuery) -> None:
         with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
             data['checkout_date'] = result
 
-            bot.edit_message_text(f"Дата выезда {result}",
+            bot.edit_message_text(f"Дата выезда {result}. Напишите ok для продолжения",
                                   call.message.chat.id,
                                   call.message.message_id)
+            bot.register_next_step_handler(call.message, hotels_count)
 
 
 def hotels_count(message):
@@ -145,8 +161,8 @@ def get_info(message):
             for i in get_bestdeal(city_id=find_destinationid(data['city_id']), low_price=int(data['low_price']),
                                   high_price=int(data['high_price']),
                                   min_distance=float(data['min_distance']), max_distance=float(data['max_distance']),
-                                  hotels_count=int(data['hotels_count']), checkin_date=data['chekin_date'],
-                                  checkout_date=data['checkout_date'], count_photo=0):
+                                  hotels_count=int(data['hotels_count']), checkin_date=data['checkin_date'],
+                                  checkout_date=data['checkout_date'], count_photo=0, page_number=1):
                 bot.send_message(message.from_user.id, i)
                 history_string += i
         us_id = message.from_user.id
@@ -170,8 +186,8 @@ def get_info_with_photo(message):
         for i in get_bestdeal(city_id=find_destinationid(data['city_id']), low_price=int(data['low_price']),
                               high_price=int(data['high_price']),
                               min_distance=float(data['min_distance']), max_distance=float(data['max_distance']),
-                              hotels_count=int(data['hotels_count']), checkin_date=data['chekin_date'],
-                              checkout_date=data['checkout_date'], count_photo=int(data['count_photo'])):
+                              hotels_count=int(data['hotels_count']), checkin_date=data['checkin_date'],
+                              checkout_date=data['checkout_date'], count_photo=int(data['count_photo']), page_number=1):
             bot.send_message(message.from_user.id, i)
             history_string += i
     us_id = message.from_user.id

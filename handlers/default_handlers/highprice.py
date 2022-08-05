@@ -7,7 +7,7 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from botrequests.low_and_highprice import find_hotels
-from my_calendar import get_calendar, calendar_command, ALL_STEPS
+from my_calendar import get_calendar, ALL_STEPS
 
 from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
 from loader import bot
@@ -25,11 +25,25 @@ def check_city(message):
     bot.send_message(message.from_user.id, text='Выберите город', reply_markup=keyboard_city(message.text))
     bot.register_next_step_handler(message, calendar_command)
 
+@bot.message_handler(commands=['calendar'])
+def calendar_command(message: Message):
+    today = datetime.date.today()
+    calendar, step = get_calendar(calendar_id=3,
+                                  current_date=today,
+                                  min_date=today,
+                                  max_date=today + datetime.timedelta(days=365),
+                                  locale="ru")
+
+    bot.set_state(message.from_user.id,HotelInfoState.checkin_date, message.chat.id)
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['city_id'] = message.text
+    bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
+
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=3))
 def check_in_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=1,
+    result, key, step = get_calendar(calendar_id=3,
                                      current_date=today,
                                      min_date=today,
                                      max_date=today + timedelta(days=365),
@@ -50,7 +64,7 @@ def check_in_date(call: CallbackQuery) -> None:
                                   call.message.message_id)
 
             bot.send_message(call.from_user.id, "Выберите дату выезда")
-            calendar, step = get_calendar(calendar_id=2,
+            calendar, step = get_calendar(calendar_id=4,
                                           min_date=result + datetime.timedelta(days=1),
                                           max_date=result + datetime.timedelta(days=365),
                                           locale="ru",
@@ -66,7 +80,7 @@ def check_in_date(call: CallbackQuery) -> None:
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=4))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=2,
+    result, key, step = get_calendar(calendar_id=4,
                                      current_date=today,
                                      min_date=today,
                                      max_date=today + timedelta(days=365),
@@ -82,7 +96,7 @@ def check_out_date(call: CallbackQuery) -> None:
         with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
             data['checkout_date'] = result
 
-            bot.edit_message_text(f"Дата выезда {result}",
+            bot.edit_message_text(f"Дата выезда {result}. Напишите ok для продолжения",
                                   call.message.chat.id,
                                   call.message.message_id)
             bot.register_next_step_handler(call.message, hotels_count)

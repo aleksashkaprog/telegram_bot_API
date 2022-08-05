@@ -29,7 +29,7 @@ def get_history_db(username):
         for r in res:
             history_str += str(r) + ' '
             history_list.append(history_str)
-    return history_list
+    return history_list[:10]
 
 #
 # print(get_history_db('aleksashkaprog'))

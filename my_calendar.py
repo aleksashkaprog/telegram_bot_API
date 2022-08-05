@@ -1,6 +1,7 @@
 import datetime
 
-from telebot.types import CallbackQuery, Message
+from TelegramBotAPI.types import Message
+from telebot.types import CallbackQuery
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 from loader import bot
@@ -24,10 +25,7 @@ def get_calendar(is_process=False, callback_data=None, **kwargs):
                                                   locale=kwargs['locale']).build()
         return calendar, step
 
-
 ALL_STEPS = {'y': 'год', 'm': 'месяц', 'd': 'день'}
-
-
 @bot.message_handler(commands=['calendar'])
 def calendar_command(message: Message):
     today = datetime.date.today()
@@ -41,3 +39,7 @@ def calendar_command(message: Message):
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['city_id'] = message.text
     bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
+
+
+
+
