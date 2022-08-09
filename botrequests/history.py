@@ -4,6 +4,15 @@ conn = sqlite3.connect('database/tele_bot.db', check_same_thread=False)
 cursor = conn.cursor()
 
 
+def create_table():
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS telebot_history (user_id int, username NVARCHAR, hotels NVARCHAR, command NVARCHAR, command_date NVARCHAR)
+    """
+    )
+    conn.commit()
+
+
 def update_history_db(user_id: int, username: str, command: str, command_date, hotels):
     cursor.execute(
         """
@@ -22,7 +31,7 @@ def get_history_db(username):
         """
     SELECT command, command_date, hotels FROM 'telebot_history' WHERE username == (?)
     """,
-        (username, )
+        (username,)
     )
     result = cursor.fetchall()
     for res in result:
@@ -31,5 +40,8 @@ def get_history_db(username):
             history_list.append(history_str)
     return history_list[:10]
 
-#
+
+# #
 # print(get_history_db('aleksashkaprog'))
+create_table()
+
