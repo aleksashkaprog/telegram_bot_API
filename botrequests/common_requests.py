@@ -5,11 +5,11 @@ from pprint import pprint
 import requests
 from decouple import config
 
-API_KEY = config('RAPID_API_KEY')
+from config_data.config import RAPID_API_KEY
 
 headers = {
     "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
-    "X-RapidAPI-Key": API_KEY
+    "X-RapidAPI-Key": RAPID_API_KEY
 }
 
 

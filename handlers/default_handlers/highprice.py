@@ -7,16 +7,17 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from botrequests.low_and_highprice import find_hotels
-from my_calendar import get_calendar, ALL_STEPS
+from utils.my_calendar import get_calendar, ALL_STEPS
 
 from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
 from loader import bot
 from states.low_and_high_price_info import HotelInfoState
-
+from main import logger
 
 @bot.message_handler(commands=['highprice'])
 def bot_highprice(message: Message):
-    bot.send_message(message.from_user.id, 'Введите город, в который хотите поехать')
+    logger.debug(f"Пользователь {message.from_user.id} отправил команду highprice")
+    bot.send_message(message.from_user.id, 'Введите город, в который хотите поехать (латиницей)')
     bot.register_next_step_handler(message, check_city)
 
 
@@ -27,6 +28,7 @@ def check_city(message):
 
 @bot.message_handler(commands=['calendar'])
 def calendar_command(message: Message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал город {message.text}")
     today = datetime.date.today()
     calendar, step = get_calendar(calendar_id=3,
                                   current_date=today,
@@ -80,13 +82,14 @@ def check_in_date(call: CallbackQuery) -> None:
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=4))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=4,
-                                     current_date=today,
-                                     min_date=today,
-                                     max_date=today + timedelta(days=365),
-                                     locale="ru",
-                                     is_process=True,
-                                     callback_data=call)
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        result, key, step = get_calendar(calendar_id=4,
+                                         current_date=today,
+                                         min_date=data['checkin_date'] + timedelta(days=1),
+                                         max_date=data['checkin_date'] + timedelta(days=365),
+                                         locale="ru",
+                                         is_process=True,
+                                         callback_data=call)
     if not result and key:
         bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
                               call.from_user.id,
@@ -103,6 +106,7 @@ def check_out_date(call: CallbackQuery) -> None:
 
 
 def hotels_count(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал даты заезда и выезда")
     bot.set_state(message.from_user.id, HotelInfoState.hotels_count, message.chat.id)
     bot.send_message(message.from_user.id, text='Сколько отелей Вы хотите посмотреть?',
                      reply_markup=keyboard_number())
@@ -110,6 +114,7 @@ def hotels_count(message):
 
 
 def is_photos(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал количество отелей")
     bot.send_message(message.from_user.id, text='Хотите ли Вы посмотреть фотографии отелей?',
                      reply_markup=keyboard_yesno())
     bot.register_next_step_handler(message, get_info)
@@ -131,6 +136,7 @@ def get_info(message):
         us_id = message.from_user.id
         us_name = message.from_user.username
         update_history_db(us_id, us_name, history_string, '/highprice', datetime.datetime.now())
+        logger.debug(f"Пользователь {message.from_user.id} получил информацию по команде highprice без фото")
 
     elif message.text.lower() == 'да':
         bot.set_state(message.from_user.id, HotelInfoState.count_photo, message.chat.id)
@@ -140,6 +146,7 @@ def get_info(message):
 
 
 def get_info_with_photo(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал количество фото")
     history_string = ''
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['count_photo'] = message.text
@@ -154,3 +161,4 @@ def get_info_with_photo(message):
     us_id = message.from_user.id
     us_name = message.from_user.username
     update_history_db(us_id, us_name, history_string,'/highprice', datetime.datetime.now())
+    logger.debug(f"Пользователь {message.from_user.id} получил информацию по команде highprice с фото")
