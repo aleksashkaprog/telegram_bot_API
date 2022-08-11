@@ -1,23 +1,23 @@
 import datetime
 
 from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
-from telebot import types
 
 from botrequests.bestdeal import get_bestdeal
-from botrequests.common_requests import find_city, find_destinationid
+from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from keyboards.reply.reply import keyboard_city, keyboard_yesno, keyboard_number
 from loader import bot
-from telegram_bot_calendar.base import LSTEP
+from main import logger
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 
-from my_calendar import get_calendar, ALL_STEPS
+from utils.my_calendar import get_calendar, ALL_STEPS
 from states.best_info import BestInfoState
 
 
 @bot.message_handler(commands=['bestdeal'])
 def bot_bestdeal(message: Message):
-    bot.send_message(message.from_user.id, 'Введите город, в который хотите поехать')
+    logger.debug(f"Пользователь {message.from_user.id} ввел команду bestdeal")
+    bot.send_message(message.from_user.id, 'Введите город, в который хотите поехать (латиницей)')
     bot.register_next_step_handler(message, check_city)
 
 
@@ -29,6 +29,7 @@ def check_city(message):
 
 @bot.message_handler(commands=['calendar'])
 def calendar_command(message: Message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал город {message.text}")
     today = datetime.date.today()
     calendar, step = get_calendar(calendar_id=5,
                                   current_date=today,
@@ -82,13 +83,14 @@ def check_in_date(call: CallbackQuery) -> None:
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=6))
 def check_out_date(call: CallbackQuery) -> None:
     today = datetime.date.today()
-    result, key, step = get_calendar(calendar_id=6,
-                                     current_date=today,
-                                     min_date=today,
-                                     max_date=today + datetime.timedelta(days=365),
-                                     locale="ru",
-                                     is_process=True,
-                                     callback_data=call)
+    with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
+        result, key, step = get_calendar(calendar_id=6,
+                                         current_date=today,
+                                         min_date=data['checkin_date'] + + datetime.timedelta(days=1),
+                                         max_date=data['checkin_date'] + datetime.timedelta(days=365),
+                                         locale="ru",
+                                         is_process=True,
+                                         callback_data=call)
     if not result and key:
         bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
                               call.from_user.id,
@@ -105,6 +107,7 @@ def check_out_date(call: CallbackQuery) -> None:
 
 
 def hotels_count(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал даты заезда и выезда")
     bot.set_state(message.from_user.id, BestInfoState.hotels_count, message.chat.id)
     bot.send_message(message.from_user.id, text='Сколько отелей Вы хотите посмотреть?',
                      reply_markup=keyboard_number())
@@ -112,6 +115,7 @@ def hotels_count(message):
 
 
 def low(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал количество отелей")
     bot.set_state(message.from_user.id, BestInfoState.low_price, message.chat.id)
     bot.send_message(message.from_user.id, 'Укажите самую дешевую цену, устраивающую вас',
                      reply_markup=ReplyKeyboardRemove())
@@ -121,6 +125,7 @@ def low(message):
 
 
 def high(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал самую низкую цену, устраивающую его")
     bot.set_state(message.from_user.id, BestInfoState.high_price, message.chat.id)
     bot.send_message(message.from_user.id, 'Укажите самую дорогую цену, устраивающую вас')
     bot.register_next_step_handler(message, min)
@@ -129,6 +134,7 @@ def high(message):
 
 
 def min(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал самую высокую цену, устраивающую его")
     bot.set_state(message.from_user.id, BestInfoState.min_distance, message.chat.id)
     bot.send_message(message.from_user.id, 'Укажите минимально расстояние до центра, устраивающее вас')
     bot.register_next_step_handler(message, max)
@@ -137,6 +143,7 @@ def min(message):
 
 
 def max(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал минимальное расстояние до центра, устраивающее его")
     bot.set_state(message.from_user.id, BestInfoState.max_distance, message.chat.id)
     bot.send_message(message.from_user.id, 'Укажите максимальное расстояние до центра, устраивающее вас')
     bot.register_next_step_handler(message, is_photos)
@@ -145,6 +152,7 @@ def max(message):
 
 
 def is_photos(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал максимальное расстояние до центра, устраивающее его")
     bot.send_message(message.from_user.id, text='Хотите ли Вы посмотреть фотографии отелей?',
                      reply_markup=keyboard_yesno())
     bot.register_next_step_handler(message, get_info)
@@ -168,6 +176,7 @@ def get_info(message):
         us_id = message.from_user.id
         us_name = message.from_user.username
         update_history_db(us_id, us_name, history_string, '/bestdeal', datetime.datetime.now())
+        logger.debug(f"Пользователь {message.from_user.id} получил информацию по команде bestdeal без фото")
 
     elif message.text.lower() == 'да':
         bot.set_state(message.from_user.id, BestInfoState.count_photo, message.chat.id)
@@ -177,6 +186,7 @@ def get_info(message):
 
 
 def get_info_with_photo(message):
+    logger.debug(f"Пользователь {message.from_user.id} выбрал количество фотографий")
     history_string = ''
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['count_photo'] = message.text
@@ -193,3 +203,4 @@ def get_info_with_photo(message):
     us_id = message.from_user.id
     us_name = message.from_user.username
     update_history_db(us_id, us_name, history_string, '/bestdeal', datetime.datetime.now())
+    logger.debug(f"Пользователь {message.from_user.id} получил информацию по команде bestdeal с фото")
