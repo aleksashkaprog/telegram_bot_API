@@ -10,9 +10,8 @@ from botrequests.low_and_highprice import find_hotels
 from utils.my_calendar import get_calendar, ALL_STEPS
 
 from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
-from loader import bot
+from loader import bot, logger
 from states.low_and_high_price_info import HotelInfoState
-from main import logger
 
 @bot.message_handler(commands=['highprice'])
 def bot_highprice(message: Message):

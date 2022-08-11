@@ -3,8 +3,7 @@ import datetime
 from telebot.types import Message
 
 from botrequests.history import get_history_db, update_history_db
-from loader import bot
-from main import logger
+from loader import bot, logger
 
 
 @bot.message_handler(commands=['history'])

@@ -4,8 +4,7 @@ from telebot.types import Message
 
 from botrequests.history import update_history_db
 from config_data.config import DEFAULT_COMMANDS
-from loader import bot
-from main import logger
+from loader import bot, logger
 
 
 @bot.message_handler(commands=['help'])

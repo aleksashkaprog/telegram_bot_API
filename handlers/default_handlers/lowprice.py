@@ -7,11 +7,10 @@ from telegram_bot_calendar import DetailedTelegramCalendar
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from botrequests.low_and_highprice import find_hotels
-from main import logger
 from utils.my_calendar import get_calendar, ALL_STEPS
 
 from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
-from loader import bot
+from loader import bot, logger
 from states.low_and_high_price_info import HotelInfoState
 
 

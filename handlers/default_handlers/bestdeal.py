@@ -6,8 +6,7 @@ from botrequests.bestdeal import get_bestdeal
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from keyboards.reply.reply import keyboard_city, keyboard_yesno, keyboard_number
-from loader import bot
-from main import logger
+from loader import bot, logger
 from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 
 from utils.my_calendar import get_calendar, ALL_STEPS
