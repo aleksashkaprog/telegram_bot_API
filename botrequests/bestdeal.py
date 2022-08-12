@@ -1,10 +1,7 @@
 import json
 import re
-from pprint import pprint
 
-import requests
-
-from botrequests.common_requests import get_photo, headers, all_responses
+from botrequests.common_requests import all_responses, get_photo, headers
 
 
 def get_bestdeal(**kwargs):
@@ -14,9 +11,15 @@ def get_bestdeal(**kwargs):
     hotels_dict = {}
 
     while len(hotels_list) < kwargs['hotels_count']:
-        querystring_hotel = {"destinationId": kwargs['city_id'], "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date'],
-                             "priceMin": kwargs['low_price'], "priceMax": kwargs['high_price'], "pageNumber": str(kwargs['page_number']),
-                             "sortOrder": "DISTANCE_FROM_LANDMARK"}
+        querystring_hotel = {
+            "destinationId": kwargs['city_id'],
+            "checkIn": kwargs['checkin_date'],
+            "checkOut": kwargs['checkout_date'],
+            "priceMin": kwargs['low_price'],
+            "priceMax": kwargs['high_price'],
+            "pageNumber": str(kwargs['page_number']),
+            "sortOrder": "DISTANCE_FROM_LANDMARK",
+        }
 
         data = json.loads(all_responses(url_hotel, headers, querystring_hotel).text)
         list_result = data['data']['body']['searchResults']['results']
@@ -36,8 +39,9 @@ def get_bestdeal(**kwargs):
         querystring_detail = {"id": my_id, "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date']}
         hotels_info = all_responses(url_detail, headers, querystring_detail).json()
         try:
-            if kwargs['low_price'] <= float(hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice'][
-                                      'plain']) <= kwargs['high_price']:
+            if kwargs['low_price'] <= float(
+                    hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice'][
+                        'plain']) <= kwargs['high_price']:
                 hotels_dict[my_id] = "Название отеля:" + ' ' + hotels_info['data']['body']['propertyDescription'][
                     'name'] + '\n' + \
                                      'Адрес:' + ' ' + hotels_info['data']['body']['propertyDescription']['address'][
@@ -53,5 +57,3 @@ def get_bestdeal(**kwargs):
                                  hotels_info['data']['body']['propertyDescription']['address'][
                                      'addressLine1'] + '\nЦена по отелю недоступна'
     return hotels_dict.values()
-#
-# print(get_bestdeal('London, England, United Kingdom', 20, 500, 0.2, 4, 3, 6, '2022-07-03', '2020-07-12'))

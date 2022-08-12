@@ -1,17 +1,17 @@
 import datetime
 from datetime import timedelta
 
-from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
+from telebot.types import CallbackQuery, Message, ReplyKeyboardRemove
 from telegram_bot_calendar import DetailedTelegramCalendar
 
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
 from botrequests.low_and_highprice import find_hotels
-from utils.my_calendar import get_calendar, ALL_STEPS
-
-from keyboards.reply.reply import keyboard_yesno, keyboard_city, keyboard_number
+from keyboards.reply.reply import (keyboard_city, keyboard_number,
+                                   keyboard_yesno)
 from loader import bot, logger
 from states.low_and_high_price_info import HotelInfoState
+from utils.my_calendar import ALL_STEPS, get_calendar
 
 
 @bot.message_handler(commands=['lowprice'])
@@ -25,6 +25,7 @@ def check_city(message):
     bot.set_state(message.from_user.id, HotelInfoState.city_id, message.chat.id)
     bot.send_message(message.from_user.id, text='Выберите город', reply_markup=keyboard_city(message.text))
     bot.register_next_step_handler(message, calendar_command)
+
 
 @bot.message_handler(commands=['calendar'])
 def calendar_command(message: Message):
@@ -40,6 +41,7 @@ def calendar_command(message: Message):
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['city_id'] = message.text
     bot.send_message(message.from_user.id, f"Выберите дату заезда, {ALL_STEPS[step]}", reply_markup=calendar)
+
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
 def check_in_date(call: CallbackQuery) -> None:
@@ -91,16 +93,16 @@ def check_out_date(call: CallbackQuery) -> None:
                                          callback_data=call)
     if not result and key:
         bot.edit_message_text(f"Выберите {ALL_STEPS[step]}",
-                                  call.from_user.id,
-                                  call.message.message_id,
-                                  reply_markup=key)
+                              call.from_user.id,
+                              call.message.message_id,
+                              reply_markup=key)
     elif result:
         with bot.retrieve_data(call.from_user.id, call.message.chat.id) as data:
-                data['checkout_date'] = result
+            data['checkout_date'] = result
 
         bot.edit_message_text(f"Дата выезда {result}, для продолжения напишите 'ок'",
-                                      call.message.chat.id,
-                                      call.message.message_id)
+                              call.message.chat.id,
+                              call.message.message_id)
         bot.register_next_step_handler(call.message, hotels_count)
 
 
@@ -127,7 +129,8 @@ def get_info(message):
                          reply_markup=ReplyKeyboardRemove())
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             for i in find_hotels(city_id=find_destinationid(data['city_id']), hotels_count=int(data['hotels_count']),
-                                 checkin_date=data['checkin_date'], checkout_date=data['checkout_date'], sortOrder="PRICE",
+                                 checkin_date=data['checkin_date'], checkout_date=data['checkout_date'],
+                                 sortOrder="PRICE",
                                  count_photo=0):
                 bot.send_message(message.from_user.id, i)
                 history_string += i
@@ -158,5 +161,5 @@ def get_info_with_photo(message):
             history_string += i
     us_id = message.from_user.id
     us_name = message.from_user.username
-    update_history_db(us_id, us_name, history_string,'/lowprice', datetime.datetime.now())
+    update_history_db(us_id, us_name, history_string, '/lowprice', datetime.datetime.now())
     logger.debug(f"Пользователь {message.from_user.id} получил информацию по отелям по команде lowprice с фото")

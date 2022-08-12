@@ -1,16 +1,16 @@
 import datetime
 
-from telebot.types import Message, ReplyKeyboardRemove, CallbackQuery
+from telebot.types import CallbackQuery, Message, ReplyKeyboardRemove
+from telegram_bot_calendar.detailed import DetailedTelegramCalendar
 
 from botrequests.bestdeal import get_bestdeal
 from botrequests.common_requests import find_destinationid
 from botrequests.history import update_history_db
-from keyboards.reply.reply import keyboard_city, keyboard_yesno, keyboard_number
+from keyboards.reply.reply import (keyboard_city, keyboard_number,
+                                   keyboard_yesno)
 from loader import bot, logger
-from telegram_bot_calendar.detailed import DetailedTelegramCalendar
-
-from utils.my_calendar import get_calendar, ALL_STEPS
 from states.best_info import BestInfoState
+from utils.my_calendar import ALL_STEPS, get_calendar
 
 
 @bot.message_handler(commands=['bestdeal'])

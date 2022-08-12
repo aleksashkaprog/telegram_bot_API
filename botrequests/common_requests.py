@@ -1,9 +1,7 @@
 import json
 import re
-from pprint import pprint
 
 import requests
-from decouple import config
 
 from config_data.config import RAPID_API_KEY
 
@@ -58,6 +56,3 @@ def get_photo(photos_count, hotel_id):
     for i in range(photos_count):
         photos_list.append(hotel_photos['hotelImages'][i]['baseUrl'].format(size='z'))
     return photos_list
-
-# print(get_photo(5, 532733))
-# print(find_city('London'))

@@ -41,7 +41,4 @@ def get_history_db(username):
     return history_list[:10]
 
 
-# #
-# print(get_history_db('aleksashkaprog'))
 create_table()
-

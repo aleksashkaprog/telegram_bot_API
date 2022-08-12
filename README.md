@@ -4,7 +4,7 @@
 - Python >= 3.8
 
 ## Установка
-    pip3 install requirements.txt
+    pip3 install -r requirements.txt
 
 ## Если вы хотите работать со своим ботом и API, то
     Создать своего бота, пример по ссылке https://habr.com/ru/post/442800/

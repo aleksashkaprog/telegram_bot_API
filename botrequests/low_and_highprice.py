@@ -1,7 +1,7 @@
 import json
 import re
 
-from botrequests.common_requests import headers, all_responses, get_photo
+from botrequests.common_requests import all_responses, get_photo, headers
 
 
 def find_hotels(**kwargs):
@@ -9,8 +9,14 @@ def find_hotels(**kwargs):
     distance_dict = {}
     hotels_dict = {}
     url_hotel = "https://hotels4.p.rapidapi.com/properties/list"
-    querystring_hotel = {"destinationId": kwargs['city_id'], "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date'],
-                         "pageNumber": "1", "pageSize": kwargs['hotels_count'], "sortOrder": kwargs['sortOrder']}
+    querystring_hotel = {
+        "destinationId": kwargs['city_id'],
+        "checkIn": kwargs['checkin_date'],
+        "checkOut": kwargs['checkout_date'],
+        "pageNumber": "1",
+        "pageSize": kwargs['hotels_count'],
+        "sortOrder": kwargs['sortOrder'],
+    }
     found_hotels = json.loads(all_responses(url_hotel, headers, querystring_hotel).text)
     list_result = found_hotels['data']['body']['searchResults']['results']
     if not list_result:
@@ -41,5 +47,3 @@ def find_hotels(**kwargs):
                 hotels_dict[my_id] += '\n' + get_photo(kwargs['count_photo'], my_id)[ph]
 
     return hotels_dict.values()
-
-# print(find_hotels(city_id=332483, hotels_count=3, checkin_date='2022-07-12', checkout_date='2022-07-15', sortOrder="PRICE", count_photo=3))

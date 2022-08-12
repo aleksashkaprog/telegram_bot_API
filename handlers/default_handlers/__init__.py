@@ -1,7 +1,3 @@
-from . import start
-from . import help
-from . import lowprice
-from . import highprice
-from . import bestdeal
-from . import history
+from . import bestdeal, help, highprice, history, lowprice, start
+
 __all__ = ['start', 'help', 'lowprice', 'highprice', 'bestdeal', 'history']
