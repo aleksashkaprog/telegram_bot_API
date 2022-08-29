@@ -27,23 +27,23 @@ def find_hotels(**kwargs):
             hotels_list.append(found_hotels['data']['body']['searchResults']['results'][count]['id'])
             distance_dict[found_hotels['data']['body']['searchResults']['results'][count]['id']] = distance
 
-        for count in range(kwargs['hotels_count']):
-            hotels_list.append(found_hotels['data']['body']['searchResults']['results'][count]['id'])
-
     url_detail = "https://hotels4.p.rapidapi.com/properties/get-details"
     for my_id in hotels_list:
         querystring_detail = {"id": my_id, "checkIn": kwargs['checkin_date'], "checkOut": kwargs['checkout_date']}
 
         hotels_info = all_responses(url_detail, headers, querystring_detail).json()
-        hotels_dict[my_id] = "Название отеля:" + ' ' + hotels_info['data']['body']['propertyDescription'][
-            'name'] + '\n' + \
-                             'Адрес:' + ' ' + hotels_info['data']['body']['propertyDescription']['address'][
-                                 'addressLine1'] + '\n' + 'Расстояние до центра: ' + ' ' + distance_dict[
-                                 my_id] + '\n' + 'Цена:' + ' ' + \
-                             hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice'][
-                                 'formatted']
+        try:
+            hotels_dict[my_id] = "Название отеля:" + ' ' + hotels_info['data']['body']['propertyDescription']['name'] + '\n' + \
+                                 'Адрес:' + ' ' + hotels_info['data']['body']['propertyDescription']['address']['addressLine1']  + \
+                                 '\n' + 'Цена:' + ' ' + \
+                                 hotels_info['data']['body']['propertyDescription']['featuredPrice']['currentPrice']['formatted']
+        except KeyError:
+            hotels_dict[my_id] = hotels_info['data']['body']['propertyDescription']['name'] + '\n' + \
+                                 'Точный адрес недоступен' + '\nЦена по отелю недоступна'
+
         if kwargs['count_photo'] > 0:
             for ph in range(len(get_photo(kwargs['count_photo'], my_id))):
                 hotels_dict[my_id] += '\n' + get_photo(kwargs['count_photo'], my_id)[ph]
 
     return hotels_dict.values()
+
